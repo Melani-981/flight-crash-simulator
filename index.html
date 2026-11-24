@@ -1,0 +1,495 @@
+html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3D Flight Crash Survival Simulator</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', monospace; user-select: none; }
+  body { overflow: hidden; background: #000; color: #0f0; }
+  canvas#gameCanvas { display: block; width: 100vw; height: 100vh; }
+
+  #hud { position: fixed; inset: 0; pointer-events: none; display: none; }
+  .panel { position: absolute; background: rgba(5, 15, 10, 0.78); border: 1px solid #0f0; padding: 12px; border-radius: 4px; box-shadow: 0 0 12px rgba(0,255,0,0.2); }
+  #topBar { top: 15px; left: 15px; right: 15px; display: flex; justify-content: space-between; align-items: center; }
+  #instruments { bottom: 20px; left: 20px; width: 280px; line-height: 1.6; font-size: 14px; }
+  #atcBox { top: 80px; left: 20px; width: 340px; color: #ffeb3b; border-color: #ffeb3b; font-size: 13px; }
+  #radarContainer { bottom: 20px; right: 20px; text-align: center; }
+  #radar { background: #021208; border: 1px solid #0f0; border-radius: 50%; }
+  #controlsHelp { bottom: 20px; left: 50%; transform: translateX(-50%); text-align: center; font-size: 12px; color: #aaa; border-color: #444; }
+  #statusBanner { top: 45%; left: 50%; transform: translate(-50%, -50%); font-size: 28px; font-weight: bold; text-align: center; display: none; background: rgba(0,0,0,0.85); padding: 20px 40px; border: 2px solid #f00; color: #f00; }
+
+  #menuScreen, #replayOverlay { position: fixed; inset: 0; background: rgba(5, 10, 15, 0.94); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; padding: 20px; }
+  #replayOverlay { background: transparent; justify-content: space-between; pointer-events: none; display: none; }
+  .replayTop, .replayBottom { pointer-events: auto; background: rgba(0,0,0,0.8); border: 1px solid #0ff; color: #0ff; padding: 15px 25px; border-radius: 6px; text-align: center; }
+  h1 { color: #fff; font-size: 28px; margin-bottom: 8px; letter-spacing: 2px; }
+  p.sub { color: #8fa; margin-bottom: 20px; font-size: 14px; text-align: center; max-width: 700px; }
+  .levelGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-width: 850px; width: 100%; margin-bottom: 20px; }
+  button { background: #0a2518; color: #0f0; border: 1px solid #0f0; padding: 10px 14px; cursor: pointer; font-size: 13px; text-align: left; transition: 0.2s; }
+  button:hover { background: #0f0; color: #000; font-weight: bold; }
+  .audioUpload { margin-bottom: 15px; color: #ccc; font-size: 13px; }
+  .barOuter { width: 100%; height: 10px; background: #111; border: 1px solid #0f0; margin-top: 4px; }
+  .barInner { height: 100%; background: #0f0; width: 0%; }
+</style>
+<script src="https://cloudflare.com"></script>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="menuScreen">
+  <h1>FLIGHT SURVIVAL SIMULATOR // 10 HISTORICAL SCENARIOS</h1>
+  <p class="sub">Control airspeed, pitch, roll, yaw & wheel brakes. Avoid hazards, survive extreme weather, land safely, and complete your taxi roll into the GREEN TAXI ZONE (< 15 kts) to clear each level.</p>
+  <div class="audioUpload">
+    Optional Replay Track (e.g., Mary On A Cross Slowed MP3): <input type="file" id="audioFile" accept="audio/*">
+  </div>
+  <div class="levelGrid" id="levelButtons"></div>
+</div>
+
+<div id="hud">
+  <div class="panel" id="topBar">
+    <div id="lvlTitle">LEVEL 1</div>
+    <div id="lvlLocTime">LOCATION | TIME | WEATHER</div>
+    <div id="objectiveText" style="color:#0ff;">OBJECTIVE: LAND & TAXI TO GREEN ZONE</div>
+  </div>
+  <div class="panel" id="atcBox">
+    <strong>[ATC RADIO]:</strong> <span id="atcMsg">Standing by...</span>
+  </div>
+  <div class="panel" id="instruments">
+    <div>AIRSPEED: <span id="spdVal">0</span> KTS</div>
+    <div>ALTITUDE: <span id="altVal">0</span> FT</div>
+    <div>PITCH: <span id="pitchVal">0</span>° | ROLL: <span id="rollVal">0</span>°</div>
+    <div>THROTTLE: <span id="thrVal">0</span>%</div>
+    <div class="barOuter"><div class="barInner" id="thrBar"></div></div>
+    <div style="margin-top:6px;">BRAKES: <span id="brkVal">OFF</span> | GEAR: <span style="color:#0f0;">DOWN</span></div>
+  </div>
+  <div class="panel" id="controlsHelp">
+    [W/S] Throttle | [UP/DOWN] Pitch | [LEFT/RIGHT] Roll | [Q/E] Rudder | [B] Wheel Brakes | [C] Camera
+  </div>
+  <div class="panel" id="radarContainer">
+    <canvas id="radar" width="150" height="150"></canvas>
+    <div style="font-size:11px; margin-top:4px;">RUNWAY & TRAFFIC RADAR</div>
+  </div>
+  <div id="statusBanner"></div>
+</div>
+
+<div id="replayOverlay">
+  <div class="replayTop">
+    <h2 id="replayResultTitle">FLIGHT DATA RECORDER REPLAY</h2>
+    <p id="replaySub">Cinematic Multi-Angle Playback // Slowed Audio Active</p>
+  </div>
+  <div class="replayBottom">
+    <button onclick="switchReplayCam()" style="margin-right:10px;">SWITCH CAMERA ANGLE</button>
+    <button onclick="nextOrRetry()" id="nextBtn">CONTINUE</button>
+  </div>
+</div>
+
+<audio id="customAudio" loop></audio>
+
+<script>
+const LEVELS = [
+  { id: 1, name: "LVL 1: Clear Skies Training", loc: "Melbourne YMML (37.66°S, 144.84°E)", time: "14:00 DAY", weather: "Clear, 5kt Wind", sky: 0x6ba4d9, fog: 0x87b8e6, fogDens: 0.0004, windX: 0.5, startAlt: 180, startSpd: 145, hazards: "none", atc: "Velocity 402, cleared visual approach Runway 16. Taxi to end zone after landing." },
+  { id: 2, name: "LVL 2: Hudson Bird Strike", loc: "New York KLGA (40.77°N, 73.87°W)", time: "15:27 DAY", weather: "Crisp Winter, Low Thrust", sky: 0x7ca6c9, fog: 0x99bad6, fogDens: 0.0006, windX: 1.0, startAlt: 220, startSpd: 150, hazards: "birds", atc: "Cactus 1549, dual engine power loss reported! Maintain airspeed and land straight ahead!" },
+  { id: 3, name: "LVL 3: Crosswind Shear", loc: "Madeira LPMA (32.69°N, 16.77°W)", time: "17:15 DUSK", weather: "35kt Crosswind Gusts", sky: 0xd97b43, fog: 0xb5653a, fogDens: 0.0008, windX: 6.5, startAlt: 250, startSpd: 155, hazards: "none", atc: "TAP 421, wind 280 at 35 knots. Correct for heavy right drift on final." },
+  { id: 4, name: "LVL 4: Monsoon Downpour", loc: "Hong Kong VHHH (22.30°N, 113.91°E)", time: "19:40 NIGHT", weather: "Heavy Rain & Low Vis", sky: 0x101824, fog: 0x162233, fogDens: 0.0022, windX: -4.0, startAlt: 260, startSpd: 160, hazards: "none", atc: "Cathay 889, heavy monsoon rain on runway. Minimums 200 feet, use brakes early." },
+  { id: 5, name: "LVL 5: San Francisco Seawall", loc: "San Francisco KSFO (37.62°N, 122.37°W)", time: "11:28 DAY", weather: "Hazy, High Sink Rate", sky: 0x8fb2c9, fog: 0xaec7d6, fogDens: 0.0010, windX: 1.5, startAlt: 140, startSpd: 125, hazards: "seawall", atc: "Asiana 214, check altitude! You are low on glide path—watch the runway threshold seawall!" },
+  { id: 6, name: "LVL 6: Tokyo Runway Incursion", loc: "Tokyo Haneda RJTT (35.54°N, 139.77°E)", time: "17:47 NIGHT", weather: "Clear Night, Traffic on Rwy", sky: 0x090d16, fog: 0x0d1320, fogDens: 0.0012, windX: 0.0, startAlt: 210, startSpd: 150, hazards: "incursion", atc: "JAL 516, cleared to land 34R—CAUTION, stationary aircraft reported near threshold!" },
+  { id: 7, name: "LVL 7: Typhoon Night", loc: "Taipei RCTP (25.07°N, 121.23°E)", time: "23:15 NIGHT", weather: "Typhoon Storm, 45kt Wind", sky: 0x080b10, fog: 0x111722, fogDens: 0.0028, windX: 8.5, startAlt: 280, startSpd: 165, hazards: "none", atc: "Eva 67, typhoon gusts exceeding 45 knots. Keep wings level and hold centerline." },
+  { id: 8, name: "LVL 8: Singapore 006 (Closed Rwy)", loc: "Taipei Chiang Kai-Shek (25.08°N, 121.23°E)", time: "23:17 NIGHT", weather: "Typhoon Xangsane, Construction", sky: 0x070a0f, fog: 0x141923, fogDens: 0.0032, windX: 7.0, startAlt: 240, startSpd: 160, hazards: "singapore006", atc: "Singapore 006, heavy rain! Do NOT enter closed Runway 05R—avoid construction barriers!" },
+  { id: 9, name: "LVL 9: Microburst Wind Shear", loc: "Dallas KDFW (32.89°N, 97.04°W)", time: "18:05 STORM", weather: "Severe Microburst Downdraft", sky: 0x1a241e, fog: 0x223028, fogDens: 0.0035, windX: -9.0, startAlt: 300, startSpd: 170, hazards: "microburst", atc: "Delta 191, wind shear alert! Sudden downdraft on short final—apply full throttle if sinking!" },
+  { id: 10, name: "LVL 10: Tenerife Airport Disaster", loc: "Los Rodeos GCXO (28.48°N, 16.34°W)", time: "17:06 DUSK", weather: "Dense Zero-Vis Fog + 747 Traffic", sky: 0x555b61, fog: 0x6c737a, fogDens: 0.0068, windX: 2.5, startAlt: 190, startSpd: 155, hazards: "tenerife", atc: "KLM 4805 / Pan Am 1736, thick fog on runway! Watch for 747 crossing centerline ahead!" }
+];
+
+const canvas = document.getElementById('gameCanvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.5, 4000);
+
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
+scene.add(ambientLight);
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+dirLight.position.set(200, 400, 150);
+dirLight.castShadow = true;
+scene.add(dirLight);
+
+const groundGeo = new THREE.PlaneGeometry(8000, 8000);
+const groundMat = new THREE.MeshLambertMaterial({ color: 0x1d2e1c });
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI / 2;
+scene.add(ground);
+
+const runwayGeo = new THREE.BoxGeometry(50, 0.4, 1800);
+const runwayMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+const runway = new THREE.Mesh(runwayGeo, runwayMat);
+runway.position.set(0, 0.2, -1300);
+scene.add(runway);
+
+for (let z = -420; z > -2180; z -= 40) {
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.45, 20), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+  stripe.position.set(0, 0.22, z);
+  scene.add(stripe);
+}
+
+Use code with caution.
+const taxiZone = new THREE.Mesh(new THREE.BoxGeometry(48, 0.5, 140), new THREE.MeshBasicMaterial({ color: 0x00ff44, transparent: true, opacity: 0.45 }));
+taxiZone.position.set(0, 0.3, -2120);
+scene.add(taxiZone);
+const planeGroup = new THREE.Group();
+const planeParts = [];
+function createPart(geo, color, x, y, z, name) {
+const mat = new THREE.MeshPhongMaterial({ color, shininess: 80 });
+const mesh = new THREE.Mesh(geo, mat);
+mesh.position.set(x, y, z);
+mesh.userData = { origPos: new THREE.Vector3(x, y, z), vel: new THREE.Vector3(), rotVel: new THREE.Vector3(), name };
+planeGroup.add(mesh);
+planeParts.push(mesh);
+return mesh;
+}
+createPart(new THREE.CylinderGeometry(2.2, 2.2, 26, 16), 0xf4f4f4, 0, 2.5, 0, 'fuselage').rotation.x = Math.PI / 2;
+createPart(new THREE.ConeGeometry(2.2, 6, 16), 0x003366, 0, 2.5, -16, 'nose').rotation.x = -Math.PI / 2;
+createPart(new THREE.BoxGeometry(2.4, 1.1, 3.2), 0x111111, 0, 3.5, -12.5, 'cockpit');
+createPart(new THREE.BoxGeometry(16, 0.4, 4.5), 0xdcdcdc, -9, 2.2, -1, 'leftWing');
+createPart(new THREE.BoxGeometry(16, 0.4, 4.5), 0xdcdcdc, 9, 2.2, -1, 'rightWing');
+createPart(new THREE.CylinderGeometry(0.9, 0.9, 3.5, 12), 0x333333, -7, 1.3, -2.5, 'engL').rotation.x = Math.PI / 2;
+createPart(new THREE.CylinderGeometry(0.9, 0.9, 3.5, 12), 0x333333, 7, 1.3, -2.5, 'engR').rotation.x = Math.PI / 2;
+createPart(new THREE.BoxGeometry(0.5, 6.5, 4), 0xcc0000, 0, 6.2, 11, 'tailFin');
+createPart(new THREE.BoxGeometry(10, 0.3, 2.5), 0xdcdcdc, 0, 3.2, 11.5, 'hStab');
+scene.add(planeGroup);
+let activeHazards = [];
+const fireParticles = [];
+function clearHazards() {
+activeHazards.forEach(h => scene.remove(h.mesh));
+activeHazards = [];
+fireParticles.forEach(p => scene.remove(p));
+fireParticles.length = 0;
+}
+function addHazardBox(w, h, d, x, y, z, color, label) {
+const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshPhongMaterial({ color }));
+mesh.position.set(x, y, z);
+scene.add(mesh);
+activeHazards.push({ mesh, w, h, d, label });
+}
+function spawnOther747(x, z, rotY, label) {
+const g = new THREE.Group();
+const body = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.5, 30, 12), new THREE.MeshPhongMaterial({ color: 0x0055aa }));
+body.rotation.x = Math.PI / 2;
+body.position.y = 3;
+const wings = new THREE.Mesh(new THREE.BoxGeometry(34, 0.6, 6), new THREE.MeshPhongMaterial({ color: 0xeeeeee }));
+wings.position.y = 2.8;
+g.add(body, wings);
+g.position.set(x, 0, z);
+g.rotation.y = rotY;
+scene.add(g);
+activeHazards.push({ mesh: g, w: 32, h: 7, d: 28, label });
+}
+function setupLevelHazards(type) {
+clearHazards();
+if (type === "seawall") {
+addHazardBox(60, 12, 8, 0, 6, -395, 0x555555, "Runway Threshold Seawall");
+} else if (type === "incursion") {
+spawnOther747(0, -680, 0, "Coast Guard Dash-8 on Runway");
+} else if (type === "singapore006") {
+for (let z = -850; z > -1450; z -= 140) {
+addHazardBox(16, 6, 6, (z % 280 === 0 ? -9 : 9), 3, z, 0xff6600, "Construction Barrier");
+}
+} else if (type === "tenerife") {
+spawnOther747(4, -1250, Math.PI / 3, "KLM Boeing 747 on Runway");
+} else if (type === "birds") {
+for (let i = 0; i < 8; i++) {
+addHazardBox(3, 2, 3, (Math.random() - 0.5) * 24, 25 + Math.random() * 20, -250 - i * 35, 0x222222, "Bird Flock");
+}
+}
+}
+let currentLevelIdx = 0;
+let gameState = "MENU";
+let camMode = 0;
+let replayCamMode = 0;
+let flightLog = [];
+let replayFrame = 0;
+const state = {
+pos: new THREE.Vector3(0, 180, 200),
+vel: new THREE.Vector3(0, 0, -75),
+rot: new THREE.Euler(0, 0, 0, 'YXZ'),
+throttle: 0.65,
+brakes: false
+};
+const keys = {};
+window.addEventListener('keydown', e => {
+keys[e.code] = true;
+if (e.code === 'KeyC' && gameState === 'PLAYING') camMode = (camMode + 1) % 3;
+});
+window.addEventListener('keyup', e => keys[e.code] = false);
+const levelGrid = document.getElementById('levelButtons');
+LEVELS.forEach((lvl, idx) => {
+const btn = document.createElement('button');
+btn.innerHTML = <strong>${lvl.name}</strong><br><span style="font-size:11px;color:#9dc;">${lvl.loc} | ${lvl.weather}</span>;
+btn.onclick = () => startLevel(idx);
+levelGrid.appendChild(btn);
+});
+const customAudio = document.getElementById('customAudio');
+document.getElementById('audioFile').addEventListener('change', e => {
+const file = e.target.files[0];
+if (file) {
+customAudio.src = URL.createObjectURL(file);
+customAudio.playbackRate = 0.82;
+}
+});
+let audioCtx = null;
+function playFallbackSlowedSynth() {
+try {
+audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const notes = [220, 261.63, 329.63, 293.66];
+let step = 0;
+const playNote = () => {
+if (gameState !== "REPLAY") return;
+const osc = audioCtx.createOscillator();
+const gain = audioCtx.createGain();
+osc.type = 'sawtooth';
+osc.frequency.setValueAtTime(notes[step % notes.length] * 0.5, audioCtx.currentTime);
+gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2.2);
+osc.connect(gain);
+gain.connect(audioCtx.destination);
+osc.start();
+osc.stop(audioCtx.currentTime + 2.3);
+step++;
+setTimeout(playNote, 2000);
+};
+playNote();
+} catch (e) {}
+}
+function speakATC(text) {
+document.getElementById('atcMsg').innerText = text;
+if ('speechSynthesis' in window) {
+window.speechSynthesis.cancel();
+const utter = new SpeechSynthesisUtterance(text);
+utter.rate = 1.05;
+utter.pitch = 0.9;
+window.speechSynthesis.speak(utter);
+}
+}
+function startLevel(idx) {
+currentLevelIdx = idx;
+const lvl = LEVELS[idx];
+document.getElementById('menuScreen').style.display = 'none';
+document.getElementById('replayOverlay').style.display = 'none';
+document.getElementById('statusBanner').style.display = 'none';
+document.getElementById('hud').style.display = 'block';
+planeParts.forEach(p => {
+p.position.copy(p.userData.origPos);
+p.rotation.set(p.userData.name === 'fuselage' ? Math.PI/2 : (p.userData.name === 'nose' ? -Math.PI/2 : (p.userData.name.startsWith('eng') ? Math.PI/2 : 0)), 0, 0);
+});
+scene.background = new THREE.Color(lvl.sky);
+scene.fog = new THREE.FogExp2(lvl.fog, lvl.fogDens);
+setupLevelHazards(lvl.hazards);
+state.pos.set(0, lvl.startAlt, 250);
+state.vel.set(0, -2, -lvl.startSpd * 0.514);
+state.rot.set(-0.04, 0, 0, 'YXZ');
+state.throttle = 0.65;
+flightLog = [];
+gameState = "PLAYING";
+document.getElementById('lvlTitle').innerText = lvl.name;
+document.getElementById('lvlLocTime').innerText = ${lvl.loc} | ${lvl.time} | ${lvl.weather};
+speakATC(lvl.atc);
+}
+function triggerCrash(reason) {
+if (gameState !== "PLAYING") return;
+gameState = "CRASHED";
+const banner = document.getElementById('statusBanner');
+banner.style.display = 'block';
+banner.style.borderColor = '#ff2222';
+banner.style.color = '#ff2222';
+banner.innerHTML = AIRCRAFT DESTROYED<br><span style="font-size:16px;">${reason}</span>;
+planeParts.forEach(p => {
+p.userData.vel.set((Math.random() - 0.5) * 25, Math.random() * 18 + 5, (Math.random() - 0.5) * 25);
+p.userData.rotVel.set(Math.random() * 5, Math.random() * 5, Math.random() * 5);
+});
+for (let i = 0; i < 25; i++) {
+const f = new THREE.Mesh(new THREE.SphereGeometry(2.5, 8, 8), new THREE.MeshBasicMaterial({ color: i % 2 === 0 ? 0xff4400 : 0x222222 }));
+f.position.copy(state.pos).add(new THREE.Vector3((Math.random()-0.5)*15, Math.random()*5, (Math.random()-0.5)*15));
+scene.add(f);
+fireParticles.push(f);
+}
+setTimeout(() => startReplay(false, reason), 2400);
+}
+function triggerLevelSuccess() {
+if (gameState !== "PLAYING") return;
+gameState = "SUCCESS";
+const banner = document.getElementById('statusBanner');
+banner.style.display = 'block';
+banner.style.borderColor = '#00ff44';
+banner.style.color = '#00ff44';
+banner.innerHTML = TAXI ROLL COMPLETE — SURVIVED!<br><span style="font-size:16px;">Loading Flight Data Replay...</span>;
+speakATC("Good job, welcome to the gate. Level complete.");
+setTimeout(() => startReplay(true, "SAFE LANDING & TAXI COMPLETED"), 2200);
+}
+function startReplay(survived, subtitle) {
+gameState = "REPLAY";
+replayFrame = 0;
+document.getElementById('hud').style.display = 'none';
+document.getElementById('statusBanner').style.display = 'none';
+document.getElementById('replayOverlay').style.display = 'flex';
+document.getElementById('replayResultTitle').innerText = survived ? "SURVIVAL REPLAY // LEVEL CLEARED" : "CRASH INVESTIGATION REPLAY";
+document.getElementById('replaySub').innerText = subtitle;
+document.getElementById('nextBtn').innerText = survived && currentLevelIdx < LEVELS.length - 1 ? "NEXT LEVEL >>" : "RETRY / MENU";
+if (customAudio.src) {
+customAudio.currentTime = 0;
+customAudio.play();
+} else {
+playFallbackSlowedSynth();
+}
+}
+function switchReplayCam() {
+replayCamMode = (replayCamMode + 1) % 3;
+}
+function nextOrRetry() {
+customAudio.pause();
+if (gameState === "REPLAY" && document.getElementById('nextBtn').innerText.includes("NEXT")) {
+startLevel(currentLevelIdx + 1);
+} else {
+document.getElementById('replayOverlay').style.display = 'none';
+document.getElementById('menuScreen').style.display = 'flex';
+gameState = "MENU";
+}
+}
+const radarCtx = document.getElementById('radar').getContext('2d');
+function drawRadar() {
+radarCtx.clearRect(0, 0, 150, 150);
+radarCtx.strokeStyle = 'rgba(0,255,0,0.25)';
+radarCtx.beginPath(); radarCtx.arc(75, 75, 65, 0, Math.PI*2); radarCtx.stroke();
+radarCtx.beginPath(); radarCtx.moveTo(75, 5); radarCtx.lineTo(75, 145); radarCtx.stroke();
+const scale = 0.06;
+const rx = 75 + (0 - state.pos.x) * scale;
+const rz = 75 + (-1300 - state.pos.z) * scale;
+radarCtx.fillStyle = '#555';
+radarCtx.fillRect(rx - 3, rz - 54, 6, 108);
+const tz = 75 + (-2120 - state.pos.z) * scale;
+radarCtx.fillStyle = '#0f0';
+radarCtx.fillRect(rx - 3, tz - 4, 6, 8);
+radarCtx.fillStyle = '#f00';
+activeHazards.forEach(h => {
+const hx = 75 + (h.mesh.position.x - state.pos.x) * scale;
+const hz = 75 + (h.mesh.position.z - state.pos.z) * scale;
+radarCtx.fillRect(hx - 2, hz - 2, 4, 4);
+});
+radarCtx.fillStyle = '#0ff';
+radarCtx.beginPath(); radarCtx.moveTo(75, 70); radarCtx.lineTo(71, 79); radarCtx.lineTo(79, 79); radarCtx.fill();
+}
+let lastTime = performance.now();
+function animate(now) {
+requestAnimationFrame(animate);
+const dt = Math.min((now - lastTime) / 1000, 0.05);
+lastTime = now;
+if (gameState === "PLAYING") {
+const lvl = LEVELS[currentLevelIdx];
+if (keys['KeyW']) state.throttle = Math.min(1, state.throttle + 0.4 * dt);
+if (keys['KeyS']) state.throttle = Math.max(0, state.throttle - 0.4 * dt);
+if (keys['ArrowUp']) state.rot.x -= 0.7 * dt;
+if (keys['ArrowDown']) state.rot.x += 0.7 * dt;
+if (keys['ArrowLeft']) state.rot.z += 1.1 * dt;
+if (keys['ArrowRight']) state.rot.z -= 1.1 * dt;
+if (keys['KeyQ']) state.rot.y += 0.5 * dt;
+if (keys['KeyE']) state.rot.y -= 0.5 * dt;
+state.brakes = !!keys['KeyB'];
+const forward = new THREE.Vector3(0, 0, -1).applyEuler(state.rot);
+let speed = state.vel.length();
+const targetSpeed = 20 + state.throttle * 85;
+speed += (targetSpeed - speed) * 0.4 * dt;
+const onGround = state.pos.y <= 1.2;
+if (onGround) {
+state.pos.y = 1.0;
+state.rot.z *= 0.85;
+if (state.rot.x < 0) state.rot.x = 0;
+if (state.brakes) speed = Math.max(0, speed - 22 * dt);
+else speed = Math.max(0, speed - 3 * dt);
+}
+const lift = Math.min(9.81, (speed / 58) * 9.81);
+const verticalVel = onGround && state.rot.x <= 0.02 ? 0 : (forward.y * speed) + (lift - 9.81) * 1.6;
+const microburst = (lvl.hazards === "microburst" && state.pos.z < -100 && state.pos.z > -600) ? -9.5 : 0;
+state.vel.set(
+forward.x * speed + lvl.windX,
+verticalVel + microburst,
+forward.z * speed
+);
+state.pos.addScaledVector(state.vel, dt);
+planeGroup.position.copy(state.pos);
+planeGroup.rotation.copy(state.rot);
+flightLog.push({ pos: state.pos.clone(), rot: state.rot.clone(), crashed: false });
+if (state.pos.y <= 1.1 && (state.vel.y < -11.5 || Math.abs(state.rot.z) > 0.45)) {
+triggerCrash("HARD IMPACT / WING STRIKE ON TOUCHDOWN");
+}
+activeHazards.forEach(h => {
+const dx = Math.abs(state.pos.x - h.mesh.position.x);
+const dy = Math.abs(state.pos.y - h.mesh.position.y);
+const dz = Math.abs(state.pos.z - h.mesh.position.z);
+if (dx < (h.w / 2 + 4) && dy < (h.h / 2 + 2) && dz < (h.d / 2 + 10)) {
+triggerCrash(COLLISION WITH ${h.label.toUpperCase()});
+}
+});
+const knots = Math.round(speed * 1.94384);
+if (onGround && Math.abs(state.pos.x) < 24 && state.pos.z < -2050 && state.pos.z > -2200 && knots < 15) {
+triggerLevelSuccess();
+}
+if (camMode === 0) {
+const offset = new THREE.Vector3(0, 9, 32).applyEuler(state.rot);
+camera.position.copy(state.pos).add(offset);
+camera.lookAt(state.pos);
+} else if (camMode === 1) {
+const cockpitPos = new THREE.Vector3(0, 3.8, -13).applyEuler(state.rot);
+camera.position.copy(state.pos).add(cockpitPos);
+camera.rotation.copy(state.rot);
+} else {
+const wingPos = new THREE.Vector3(-15, 4, 2).applyEuler(state.rot);
+camera.position.copy(state.pos).add(wingPos);
+camera.lookAt(state.pos.clone().add(forward.scale(30)));
+}
+document.getElementById('spdVal').innerText = knots;
+document.getElementById('altVal').innerText = Math.max(0, Math.round((state.pos.y - 1) * 3.28));
+document.getElementById('pitchVal').innerText = Math.round(state.rot.x * 57.3);
+document.getElementById('rollVal').innerText = Math.round(state.rot.z * 57.3);
+document.getElementById('thrVal').innerText = Math.round(state.throttle * 100);
+document.getElementById('thrBar').style.width = ${state.throttle * 100}%;
+document.getElementById('brkVal').innerText = state.brakes ? "ENGAGED" : "OFF";
+drawRadar();
+} else if (gameState === "CRASHED") {
+planeParts.forEach(p => {
+p.position.addScaledVector(p.userData.vel, dt);
+p.userData.vel.y -= 9.8 * dt;
+if (p.position.y < 0.5) { p.position.y = 0.5; p.userData.vel.multiplyScalar(0.5); }
+p.rotation.x += p.userData.rotVel.x * dt;
+p.rotation.y += p.userData.rotVel.y * dt;
+});
+flightLog.push({ pos: state.pos.clone(), rot: state.rot.clone(), crashed: true });
+} else if (gameState === "REPLAY" && flightLog.length > 0) {
+const frame = flightLog[Math.floor(replayFrame)];
+planeGroup.position.copy(frame.pos);
+planeGroup.rotation.copy(frame.rot);
+if (replayCamMode === 0) {
+const angle = replayFrame * 0.015;
+camera.position.set(frame.pos.x + Math.sin(angle) * 38, frame.pos.y + 12, frame.pos.z + Math.cos(angle) * 38);
+camera.lookAt(frame.pos);
+} else if (replayCamMode === 1) {
+camera.position.set(45, 22, frame.pos.z - 40);
+camera.lookAt(frame.pos);
+} else {
+const tailOffset = new THREE.Vector3(0, 8, 16).applyEuler(frame.rot);
+camera.position.copy(frame.pos).add(tailOffset);
+camera.lookAt(frame.pos);
+}
+replayFrame = (replayFrame + 0.65) % flightLog.length;
+}
+renderer.render(scene, camera);
+}
+window.addEventListener('resize', () => {
+camera.aspect = window.innerWidth / window.innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(window.innerWidth, window.innerHeight);
+});
+animate(performance.now());
+
+
+
+
