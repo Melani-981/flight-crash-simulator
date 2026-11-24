@@ -38,7 +38,7 @@ html
 
 <div id="menuScreen">
   <h1>FLIGHT SURVIVAL SIMULATOR // 10 HISTORICAL SCENARIOS</h1>
-  <p class="sub">100% Instant Offline 3D Engine. Land safely, avoid hazards, and taxi into the GREEN ZONE (&lt; 15 kts) to complete each level.</p>
+  <p class="sub">100% Instant Offline 3D Engine. Land safely, avoid hazards, and taxi into the GREEN ZONE (under 15 kts) to complete each level.</p>
   <div class="audioUpload">
     Optional Replay Track (e.g., Mary On A Cross Slowed MP3): <input type="file" id="audioFile" accept="audio/*">
   </div>
@@ -68,7 +68,7 @@ html
   <div class="panel" id="instruments">
     <div>AIRSPEED: <span id="spdVal">0</span> KTS</div>
     <div>ALTITUDE: <span id="altVal">0</span> FT</div>
-    <div>PITCH: <span id="pitchVal">0</span>° | ROLL: <span id="rollVal">0</span>°</div>
+    <div>PITCH: <span id="pitchVal">0</span> deg | ROLL: <span id="rollVal">0</span> deg</div>
     <div>THROTTLE: <span id="thrVal">0</span>%</div>
     <div class="barOuter"><div class="barInner" id="thrBar"></div></div>
     <div style="margin-top:6px;">BRAKES: <span id="brkVal">OFF</span> | GEAR: <span style="color:#0f0;">DOWN</span></div>
@@ -96,54 +96,73 @@ html
 
 <audio id="customAudio" loop></audio>
 
-<script>
+<script type="text/javascript">
 const LEVELS = [
-  { name: "LVL 1: Clear Skies Training", loc: "Melbourne YMML (37.66°S, 144.84°E)", time: "14:00 DAY", weather: "Clear, 5kt Wind", sky: "#6ba4d9", ground: "#1e361c", fog: 0.0002, windX: 0.4, startAlt: 160, startSpd: 145, hazards: "none", atc: "Velocity 402, cleared visual approach Runway 16. Taxi to end zone after landing." },
-  { name: "LVL 2: Hudson Bird Strike", loc: "New York KLGA (40.77°N, 73.87°W)", time: "15:27 DAY", weather: "Crisp Winter, Low Thrust", sky: "#7ca6c9", ground: "#2a3842", fog: 0.0004, windX: 1.0, startAlt: 200, startSpd: 150, hazards: "birds", atc: "Cactus 1549, dual engine power loss! Maintain airspeed and land straight ahead!" },
-  { name: "LVL 3: Crosswind Shear", loc: "Madeira LPMA (32.69°N, 16.77°W)", time: "17:15 DUSK", weather: "35kt Crosswind Gusts", sky: "#d97b43", ground: "#2b251c", fog: 0.0005, windX: 5.5, startAlt: 220, startSpd: 155, hazards: "none", atc: "TAP 421, wind 280 at 35 knots. Correct for heavy right drift on final." },
-  { name: "LVL 4: Monsoon Downpour", loc: "Hong Kong VHHH (22.30°N, 113.91°E)", time: "19:40 NIGHT", weather: "Heavy Rain & Low Vis", sky: "#101824", ground: "#0d141c", fog: 0.0014, windX: -3.5, startAlt: 240, startSpd: 160, hazards: "none", atc: "Cathay 889, heavy monsoon rain on runway. Minimums 200 feet, use brakes early." },
-  { name: "LVL 5: San Francisco Seawall", loc: "San Francisco KSFO (37.62°N, 122.37°W)", time: "11:28 DAY", weather: "Hazy, High Sink Rate", sky: "#8fb2c9", ground: "#28362a", fog: 0.0007, windX: 1.2, startAlt: 130, startSpd: 130, hazards: "seawall", atc: "Asiana 214, check altitude! You are low on glide path—watch the runway seawall!" },
-  { name: "LVL 6: Tokyo Runway Incursion", loc: "Tokyo Haneda RJTT (35.54°N, 139.77°E)", time: "17:47 NIGHT", weather: "Clear Night, Traffic on Rwy", sky: "#090d16", ground: "#0b101a", fog: 0.0008, windX: 0.0, startAlt: 200, startSpd: 150, hazards: "incursion", atc: "JAL 516, CAUTION, stationary aircraft reported on runway near threshold!" },
-  { name: "LVL 7: Typhoon Night", loc: "Taipei RCTP (25.07°N, 121.23°E)", time: "23:15 NIGHT", weather: "Typhoon Storm, 45kt Wind", sky: "#080b10", ground: "#0a0e14", fog: 0.0018, windX: 7.0, startAlt: 260, startSpd: 165, hazards: "none", atc: "Eva 67, typhoon gusts exceeding 45 knots. Keep wings level and hold centerline." },
-  { name: "LVL 8: Singapore 006 (Closed Rwy)", loc: "Taipei CKS (25.08°N, 121.23°E)", time: "23:17 NIGHT", weather: "Typhoon Xangsane, Construction", sky: "#070a0f", ground: "#0c1017", fog: 0.0020, windX: 6.0, startAlt: 220, startSpd: 160, hazards: "singapore006", atc: "Singapore 006, heavy rain! Avoid construction barriers on closed runway!" },
-  { name: "LVL 9: Microburst Wind Shear", loc: "Dallas KDFW (32.89°N, 97.04°W)", time: "18:05 STORM", weather: "Severe Microburst Downdraft", sky: "#1a241e", ground: "#131c16", fog: 0.0022, windX: -7.5, startAlt: 280, startSpd: 170, hazards: "microburst", atc: "Delta 191, wind shear alert! Sudden downdraft on final—apply full throttle!" },
+  { name: "LVL 1: Clear Skies Training", loc: "Melbourne YMML (37.66S, 144.84E)", time: "14:00 DAY", weather: "Clear, 5kt Wind", sky: "#6ba4d9", ground: "#1e361c", fog: 0.0002, windX: 0.4, startAlt: 160, startSpd: 145, hazards: "none", atc: "Velocity 402, cleared visual approach Runway 16. Taxi to end zone after landing." },
+  { name: "LVL 2: Hudson Bird Strike", loc: "New York KLGA (40.77N, 73.87W)", time: "15:27 DAY", weather: "Crisp Winter, Low Thrust", sky: "#7ca6c9", ground: "#2a3842", fog: 0.0004, windX: 1.0, startAlt: 200, startSpd: 150, hazards: "birds", atc: "Cactus 1549, dual engine power loss! Maintain airspeed and land straight ahead!" },
+  { name: "LVL 3: Crosswind Shear", loc: "Madeira LPMA (32.69N, 16.77W)", time: "17:15 DUSK", weather: "35kt Crosswind Gusts", sky: "#d97b43", ground: "#2b251c", fog: 0.0005, windX: 5.5, startAlt: 220, startSpd: 155, hazards: "none", atc: "TAP 421, wind 280 at 35 knots. Correct for heavy right drift on final." },
+  { name: "LVL 4: Monsoon Downpour", loc: "Hong Kong VHHH (22.30N, 113.91E)", time: "19:40 NIGHT", weather: "Heavy Rain & Low Vis", sky: "#101824", ground: "#0d141c", fog: 0.0014, windX: -3.5, startAlt: 240, startSpd: 160, hazards: "none", atc: "Cathay 889, heavy monsoon rain on runway. Minimums 200 feet, use brakes early." },
+  { name: "LVL 5: San Francisco Seawall", loc: "San Francisco KSFO (37.62N, 122.37W)", time: "11:28 DAY", weather: "Hazy, High Sink Rate", sky: "#8fb2c9", ground: "#28362a", fog: 0.0007, windX: 1.2, startAlt: 130, startSpd: 130, hazards: "seawall", atc: "Asiana 214, check altitude! You are low on glide path, watch the runway seawall!" },
+  { name: "LVL 6: Tokyo Runway Incursion", loc: "Tokyo Haneda RJTT (35.54N, 139.77E)", time: "17:47 NIGHT", weather: "Clear Night, Traffic on Rwy", sky: "#090d16", ground: "#0b101a", fog: 0.0008, windX: 0.0, startAlt: 200, startSpd: 150, hazards: "incursion", atc: "JAL 516, CAUTION, stationary aircraft reported on runway near threshold!" },
+  { name: "LVL 7: Typhoon Night", loc: "Taipei RCTP (25.07N, 121.23E)", time: "23:15 NIGHT", weather: "Typhoon Storm, 45kt Wind", sky: "#080b10", ground: "#0a0e14", fog: 0.0018, windX: 7.0, startAlt: 260, startSpd: 165, hazards: "none", atc: "Eva 67, typhoon gusts exceeding 45 knots. Keep wings level and hold centerline." },
+  { name: "LVL 8: Singapore 006 (Closed Rwy)", loc: "Taipei CKS (25.08N, 121.23E)", time: "23:17 NIGHT", weather: "Typhoon Xangsane, Construction", sky: "#070a0f", ground: "#0c1017", fog: 0.0020, windX: 6.0, startAlt: 220, startSpd: 160, hazards: "singapore006", atc: "Singapore 006, heavy rain! Avoid construction barriers on closed runway!" },
+  { name: "LVL 9: Microburst Wind Shear", loc: "Dallas KDFW (32.89N, 97.04W)", time: "18:05 STORM", weather: "Severe Microburst Downdraft", sky: "#1a241e", ground: "#131c16", fog: 0.0022, windX: -7.5, startAlt: 280, startSpd: 170, hazards: "microburst", atc: "Delta 191, wind shear alert! Sudden downdraft on final, apply full throttle!" },
 Use code with caution.
-{ name: "LVL 10: Tenerife Airport Disaster", loc: "Los Rodeos GCXO (28.48°N, 16.34°W)", time: "17:06 DUSK", weather: "Dense Zero-Vis Fog + 747 Traffic", sky: "#555b61", ground: "#2c3033", fog: 0.0042, windX: 2.0, startAlt: 180, startSpd: 155, hazards: "tenerife", atc: "KLM 4805 / Pan Am 1736, thick fog on runway! Watch for 747 blocking centerline!" }
+{ name: "LVL 10: Tenerife Airport Disaster", loc: "Los Rodeos GCXO (28.48N, 16.34W)", time: "17:06 DUSK", weather: "Dense Zero-Vis Fog + 747 Traffic", sky: "#555b61", ground: "#2c3033", fog: 0.0042, windX: 2.0, startAlt: 180, startSpd: 155, hazards: "tenerife", atc: "KLM 4805 / Pan Am 1736, thick fog on runway! Watch for 747 blocking centerline!" }
 ];
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-window.addEventListener('resize', resize); resize();
-let currentLevelIdx = 0, gameState = "MENU", camMode = 0, replayCamMode = 0;
-let flightLog = [], replayFrame = 0, hazards = [], debris = [];
+window.addEventListener('resize', resize);
+resize();
+let currentLevelIdx = 0;
+let gameState = "MENU";
+let camMode = 0;
+let replayCamMode = 0;
+let flightLog = [];
+let replayFrame = 0;
+let hazards = [];
+let debris = [];
 let state = { x: 0, y: 160, z: 250, vx: 0, vy: 0, vz: -75, pitch: -0.04, roll: 0, yaw: 0, throttle: 0.65, brakes: false };
 const keys = {};
-window.addEventListener('keydown', e => {
+window.addEventListener('keydown', function(e) {
 keys[e.code] = true;
-if (e.code === 'KeyC' && gameState === 'PLAYING') camMode = (camMode + 1) % 3;
+if (e.code === 'KeyC' && gameState === 'PLAYING') {
+camMode = (camMode + 1) % 3;
+}
 });
-window.addEventListener('keyup', e => keys[e.code] = false);
+window.addEventListener('keyup', function(e) {
+keys[e.code] = false;
+});
 const customAudio = document.getElementById('customAudio');
-document.getElementById('audioFile').addEventListener('change', e => {
-const file = e.target.files[0];
-if (file) { customAudio.src = URL.createObjectURL(file); customAudio.playbackRate = 0.82; }
+document.getElementById('audioFile').addEventListener('change', function(e) {
+const file = e.target.files;
+if (file) {
+customAudio.src = URL.createObjectURL(file);
+customAudio.playbackRate = 0.82;
+}
 });
 function playFallbackSlowedSynth() {
 try {
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+const audioCtx = new AudioCtx();
 const notes = [220, 261.63, 329.63, 293.66];
 let step = 0;
-const playNote = () => {
+function playNote() {
 if (gameState !== "REPLAY") return;
-const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+const osc = audioCtx.createOscillator();
+const gain = audioCtx.createGain();
 osc.type = 'sawtooth';
 osc.frequency.setValueAtTime(notes[step % notes.length] * 0.5, audioCtx.currentTime);
 gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
 gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2.2);
-osc.connect(gain); gain.connect(audioCtx.destination);
-osc.start(); osc.stop(audioCtx.currentTime + 2.3);
-step++; setTimeout(playNote, 2000);
-};
+osc.connect(gain);
+gain.connect(audioCtx.destination);
+osc.start();
+osc.stop(audioCtx.currentTime + 2.3);
+step++;
+setTimeout(playNote, 2000);
+}
 playNote();
 } catch (e) {}
 }
@@ -152,22 +171,31 @@ document.getElementById('atcMsg').innerText = text;
 if ('speechSynthesis' in window) {
 window.speechSynthesis.cancel();
 const u = new SpeechSynthesisUtterance(text);
-u.rate = 1.05; u.pitch = 0.9;
+u.rate = 1.05;
+u.pitch = 0.9;
 window.speechSynthesis.speak(u);
 }
 }
 function setupHazards(type) {
 hazards = [];
-if (type === "seawall") hazards.push({ x: 0, y: 6, z: -395, w: 60, h: 12, d: 8, color: "#666", label: "Runway Seawall" });
-if (type === "incursion") hazards.push({ x: 0, y: 4, z: -680, w: 32, h: 8, d: 28, color: "#0066cc", label: "Aircraft on Runway", isPlane: true });
-if (type === "singapore006") {
-for (let z = -850; z > -1450; z -= 140)
-hazards.push({ x: (z % 280 === 0 ? -10 : 10), y: 3, z, w: 16, h: 6, d: 6, color: "#ff6600", label: "Construction Barrier" });
+if (type === "seawall") {
+hazards.push({ x: 0, y: 6, z: -395, w: 60, h: 12, d: 8, color: "#666", label: "Runway Seawall" });
 }
-if (type === "tenerife") hazards.push({ x: 3, y: 4, z: -1250, w: 34, h: 8, d: 28, color: "#0055aa", label: "KLM 747 on Runway", isPlane: true });
+if (type === "incursion") {
+hazards.push({ x: 0, y: 4, z: -680, w: 32, h: 8, d: 28, color: "#0066cc", label: "Aircraft on Runway", isPlane: true });
+}
+if (type === "singapore006") {
+for (let z = -850; z > -1450; z -= 140) {
+hazards.push({ x: (z % 280 === 0 ? -10 : 10), y: 3, z: z, w: 16, h: 6, d: 6, color: "#ff6600", label: "Construction Barrier" });
+}
+}
+if (type === "tenerife") {
+hazards.push({ x: 3, y: 4, z: -1250, w: 34, h: 8, d: 28, color: "#0055aa", label: "KLM 747 on Runway", isPlane: true });
+}
 if (type === "birds") {
-for (let i = 0; i < 8; i++)
+for (let i = 0; i < 8; i++) {
 hazards.push({ x: (Math.random() - 0.5) * 24, y: 25 + Math.random() * 20, z: -250 - i * 35, w: 4, h: 3, d: 4, color: "#111", label: "Bird Flock" });
+}
 }
 }
 function startLevel(idx) {
@@ -178,85 +206,157 @@ document.getElementById('replayOverlay').style.display = 'none';
 document.getElementById('statusBanner').style.display = 'none';
 document.getElementById('hud').style.display = 'block';
 setupHazards(lvl.hazards);
-state = { x: 0, y: lvl.startAlt, z: 250, vx: 0, vy: -2, vz: -lvl.startSpd * 0.514, pitch: -0.04, roll: 0, yaw: 0, throttle: 0.65, brakes: false };
-flightLog = []; debris = []; gameState = "PLAYING";
+state = {
+x: 0,
+y: lvl.startAlt,
+z: 250,
+vx: 0,
+vy: -2,
+vz: -lvl.startSpd * 0.514,
+pitch: -0.04,
+roll: 0,
+yaw: 0,
+throttle: 0.65,
+brakes: false
+};
+flightLog = [];
+debris = [];
+gameState = "PLAYING";
 document.getElementById('lvlTitle').innerText = lvl.name;
-document.getElementById('lvlLocTime').innerText = ${lvl.loc} | ${lvl.time} | ${lvl.weather};
+document.getElementById('lvlLocTime').innerText = lvl.loc + " | " + lvl.time + " | " + lvl.weather;
 speakATC(lvl.atc);
 }
 function triggerCrash(reason) {
 if (gameState !== "PLAYING") return;
 gameState = "CRASHED";
 const b = document.getElementById('statusBanner');
-b.style.display = 'block'; b.style.borderColor = '#ff2222'; b.style.color = '#ff2222';
-b.innerHTML = AIRCRAFT DESTROYED<br><span style="font-size:16px;">${reason}</span>;
+b.style.display = 'block';
+b.style.borderColor = '#ff2222';
+b.style.color = '#ff2222';
+b.innerHTML = 'AIRCRAFT DESTROYED
+' + reason + '';
 for (let i = 0; i < 35; i++) {
-debris.push({ x: state.x, y: state.y + 2, z: state.z, vx: (Math.random()-0.5)*30, vy: Math.random()*20+5, vz: (Math.random()-0.5)*30, color: i%2===0 ? "#ff4400" : "#ddd", size: 2 + Math.random()*3 });
+debris.push({
+x: state.x,
+y: state.y + 2,
+z: state.z,
+vx: (Math.random() - 0.5) * 30,
+vy: Math.random() * 20 + 5,
+vz: (Math.random() - 0.5) * 30,
+color: i % 2 === 0 ? "#ff4400" : "#ddd",
+size: 2 + Math.random() * 3
+});
 }
-setTimeout(() => startReplay(false, reason), 2400);
+setTimeout(function() {
+startReplay(false, reason);
+}, 2400);
 }
 function triggerLevelSuccess() {
 if (gameState !== "PLAYING") return;
 gameState = "SUCCESS";
 const b = document.getElementById('statusBanner');
-b.style.display = 'block'; b.style.borderColor = '#00ff44'; b.style.color = '#00ff44';
-b.innerHTML = TAXI ROLL COMPLETE — SURVIVED!<br><span style="font-size:16px;">Loading Flight Data Replay...</span>;
+b.style.display = 'block';
+b.style.borderColor = '#00ff44';
+b.style.color = '#00ff44';
+b.innerHTML = 'TAXI ROLL COMPLETE - SURVIVED!
+Loading Flight Data Replay...';
 speakATC("Good job, welcome to the gate. Level complete.");
-setTimeout(() => startReplay(true, "SAFE LANDING & TAXI COMPLETED"), 2200);
+setTimeout(function() {
+startReplay(true, "SAFE LANDING & TAXI COMPLETED");
+}, 2200);
 }
 function startReplay(survived, subtitle) {
-gameState = "REPLAY"; replayFrame = 0;
+gameState = "REPLAY";
+replayFrame = 0;
 document.getElementById('hud').style.display = 'none';
 document.getElementById('statusBanner').style.display = 'none';
 document.getElementById('replayOverlay').style.display = 'flex';
 document.getElementById('replayResultTitle').innerText = survived ? "SURVIVAL REPLAY // LEVEL CLEARED" : "CRASH INVESTIGATION REPLAY";
 document.getElementById('replaySub').innerText = subtitle;
-document.getElementById('nextBtn').innerText = survived && currentLevelIdx < LEVELS.length - 1 ? "NEXT LEVEL >>" : "RETRY / MENU";
-if (customAudio.src) { customAudio.currentTime = 0; customAudio.play(); } else { playFallbackSlowedSynth(); }
+document.getElementById('nextBtn').innerText = (survived && currentLevelIdx < LEVELS.length - 1) ? "NEXT LEVEL >>" : "RETRY / MENU";
+if (customAudio.src) {
+customAudio.currentTime = 0;
+customAudio.play();
+} else {
+playFallbackSlowedSynth();
 }
-function switchReplayCam() { replayCamMode = (replayCamMode + 1) % 3; }
+}
+function switchReplayCam() {
+replayCamMode = (replayCamMode + 1) % 3;
+}
 function nextOrRetry() {
 customAudio.pause();
-if (gameState === "REPLAY" && document.getElementById('nextBtn').innerText.includes("NEXT")) startLevel(currentLevelIdx + 1);
-else { document.getElementById('replayOverlay').style.display = 'none'; document.getElementById('menuScreen').style.display = 'flex'; gameState = "MENU"; }
+if (gameState === "REPLAY" && document.getElementById('nextBtn').innerText.indexOf("NEXT") !== -1) {
+startLevel(currentLevelIdx + 1);
+} else {
+document.getElementById('replayOverlay').style.display = 'none';
+document.getElementById('menuScreen').style.display = 'flex';
+gameState = "MENU";
+}
 }
 function project3D(px, py, pz, cam) {
-let dx = px - cam.x, dy = py - cam.y, dz = pz - cam.z;
-const cy = Math.cos(-cam.yaw), sy = Math.sin(-cam.yaw);
-let rx = dx * cy - dz * sy, rz = dx * sy + dz * cy;
-const cp = Math.cos(-cam.pitch), sp = Math.sin(-cam.pitch);
-let ry = dy * cp - rz * sp; rz = dy * sp + rz * cp;
-const cr = Math.cos(-cam.roll), sr = Math.sin(-cam.roll);
-let fx = rx * cr - ry * sr, fy = rx * sr + ry * cr;
+let dx = px - cam.x;
+let dy = py - cam.y;
+let dz = pz - cam.z;
+const cy = Math.cos(-cam.yaw);
+const sy = Math.sin(-cam.yaw);
+let rx = dx * cy - dz * sy;
+let rz = dx * sy + dz * cy;
+const cp = Math.cos(-cam.pitch);
+const sp = Math.sin(-cam.pitch);
+let ry = dy * cp - rz * sp;
+rz = dy * sp + rz * cp;
+const cr = Math.cos(-cam.roll);
+const sr = Math.sin(-cam.roll);
+let fx = rx * cr - ry * sr;
+let fy = rx * sr + ry * cr;
 if (rz >= -0.5) return null;
 const fov = canvas.height * 0.85;
-return { sx: canvas.width / 2 + (fx / -rz) * fov, sy: canvas.height / 2 - (fy / -rz) * fov, dist: -rz };
+return {
+sx: canvas.width / 2 + (fx / -rz) * fov,
+sy: canvas.height / 2 - (fy / -rz) * fov,
+dist: -rz
+};
 }
 function drawQuad(p1, p2, p3, p4, color) {
 if (!p1 || !p2 || !p3 || !p4) return;
 ctx.fillStyle = color;
-ctx.beginPath(); ctx.moveTo(p1.sx, p1.sy); ctx.lineTo(p2.sx, p2.sy); ctx.lineTo(p3.sx, p3.sy); ctx.lineTo(p4.sx, p4.sy); ctx.closePath(); ctx.fill();
+ctx.beginPath();
+ctx.moveTo(p1.sx, p1.sy);
+ctx.lineTo(p2.sx, p2.sy);
+ctx.lineTo(p3.sx, p3.sy);
+ctx.lineTo(p4.sx, p4.sy);
+ctx.closePath();
+ctx.fill();
 }
 function drawBox3D(x, y, z, w, h, d, color, cam) {
-const hw = w/2, hh = h/2, hd = d/2;
-const pts = [
-project3D(x-hw, y-hh, z-hd, cam), project3D(x+hw, y-hh, z-hd, cam),
-project3D(x+hw, y+hh, z-hd, cam), project3D(x-hw, y+hh, z-hd, cam),
-project3D(x-hw, y-hh, z+hd, cam), project3D(x+hw, y-hh, z+hd, cam),
-project3D(x+hw, y+hh, z+hd, cam), project3D(x-hw, y+hh, z+hd, cam)
-];
-drawQuad(pts[0], pts[1], pts[2], pts[3], color);
-drawQuad(pts[4], pts[5], pts[6], pts[7], color);
-drawQuad(pts[2], pts[3], pts[7], pts[6], color);
-drawQuad(pts[0], pts[4], pts[7], pts[3], color);
+const hw = w / 2;
+const hh = h / 2;
+const hd = d / 2;
+const p0 = project3D(x - hw, y - hh, z - hd, cam);
+const p1 = project3D(x + hw, y - hh, z - hd, cam);
+const p2 = project3D(x + hw, y + hh, z - hd, cam);
+const p3 = project3D(x - hw, y + hh, z - hd, cam);
+const p4 = project3D(x - hw, y - hh, z + hd, cam);
+const p5 = project3D(x + hw, y - hh, z + hd, cam);
+const p6 = project3D(x + hw, y + hh, z + hd, cam);
+const p7 = project3D(x - hw, y + hh, z + hd, cam);
+drawQuad(p4, p5, p6, p7, color);
+drawQuad(p0, p1, p2, p3, color);
+drawQuad(p3, p2, p6, p7, color);
+drawQuad(p0, p4, p7, p3, color);
+drawQuad(p1, p5, p6, p2, color);
 }
 function drawAircraft(px, py, pz, pitch, roll, yaw, cam) {
-const localPt = (lx, ly, lz) => {
-let x1 = lx * Math.cos(roll) - ly * Math.sin(roll), y1 = lx * Math.sin(roll) + ly * Math.cos(roll);
-let y2 = y1 * Math.cos(pitch) - lz * Math.sin(pitch), z2 = y1 * Math.sin(pitch) + lz * Math.cos(pitch);
-let x3 = x1 * Math.cos(yaw) + z2 * Math.sin(yaw), z3 = -x1 * Math.sin(yaw) + z2 * Math.cos(yaw);
+function localPt(lx, ly, lz) {
+let x1 = lx * Math.cos(roll) - ly * Math.sin(roll);
+let y1 = lx * Math.sin(roll) + ly * Math.cos(roll);
+let y2 = y1 * Math.cos(pitch) - lz * Math.sin(pitch);
+let z2 = y1 * Math.sin(pitch) + lz * Math.cos(pitch);
+let x3 = x1 * Math.cos(yaw) + z2 * Math.sin(yaw);
+let z3 = -x1 * Math.sin(yaw) + z2 * Math.cos(yaw);
 return project3D(px + x3, py + y2, pz + z3, cam);
-};
+}
 drawQuad(localPt(-18, 2, 1), localPt(18, 2, 1), localPt(18, 2, -3), localPt(-18, 2, -3), "#cccccc");
 drawQuad(localPt(-2.2, 1.5, 13), localPt(2.2, 1.5, 13), localPt(2.2, 1.5, -14), localPt(-2.2, 1.5, -14), "#f5f5f5");
 drawQuad(localPt(-2.2, 3.8, 13), localPt(2.2, 3.8, 13), localPt(1.5, 3.8, -15), localPt(-1.5, 3.8, -15), "#ffffff");
@@ -267,15 +367,28 @@ const radarCtx = document.getElementById('radar').getContext('2d');
 function drawRadar() {
 radarCtx.clearRect(0, 0, 150, 150);
 radarCtx.strokeStyle = 'rgba(0,255,0,0.3)';
-radarCtx.beginPath(); radarCtx.arc(75, 75, 65, 0, Math.PI*2); radarCtx.stroke();
-const scale = 0.06, rx = 75 + (0 - state.x) * scale, rz = 75 + (-1300 - state.z) * scale;
-radarCtx.fillStyle = '#555'; radarCtx.fillRect(rx - 3, rz - 54, 6, 108);
+radarCtx.beginPath();
+radarCtx.arc(75, 75, 65, 0, Math.PI * 2);
+radarCtx.stroke();
+const scale = 0.06;
+const rx = 75 + (0 - state.x) * scale;
+const rz = 75 + (-1300 - state.z) * scale;
+radarCtx.fillStyle = '#555';
+radarCtx.fillRect(rx - 3, rz - 54, 6, 108);
 const tz = 75 + (-2120 - state.z) * scale;
-radarCtx.fillStyle = '#0f0'; radarCtx.fillRect(rx - 3, tz - 4, 6, 8);
+radarCtx.fillStyle = '#0f0';
+radarCtx.fillRect(rx - 3, tz - 4, 6, 8);
 radarCtx.fillStyle = '#f00';
-hazards.forEach(h => radarCtx.fillRect(75 + (h.x - state.x)*scale - 2, 75 + (h.z - state.z)*scale - 2, 4, 4));
+for (let i = 0; i < hazards.length; i++) {
+const h = hazards[i];
+radarCtx.fillRect(75 + (h.x - state.x) * scale - 2, 75 + (h.z - state.z) * scale - 2, 4, 4);
+}
 radarCtx.fillStyle = '#0ff';
-radarCtx.beginPath(); radarCtx.moveTo(75, 70); radarCtx.lineTo(71, 79); radarCtx.lineTo(79, 79); radarCtx.fill();
+radarCtx.beginPath();
+radarCtx.moveTo(75, 70);
+radarCtx.lineTo(71, 79);
+radarCtx.lineTo(79, 79);
+radarCtx.fill();
 }
 let lastTime = performance.now();
 function loop(now) {
@@ -299,7 +412,8 @@ const targetSpeed = 20 + state.throttle * 85;
 speed += (targetSpeed - speed) * 0.4 * dt;
 const onGround = state.y <= 1.2;
 if (onGround) {
-state.y = 1.0; state.roll *= 0.85;
+state.y = 1.0;
+state.roll *= 0.85;
 if (state.pitch < 0) state.pitch = 0;
 speed = Math.max(0, speed - (state.brakes ? 22 : 3) * dt);
 }
@@ -308,49 +422,84 @@ const microburst = (lvl.hazards === "microburst" && state.z < -100 && state.z > 
 state.vx = -Math.sin(state.yaw) * speed + lvl.windX;
 state.vy = (onGround && state.pitch <= 0.02) ? 0 : (Math.sin(state.pitch) * speed) + (lift - 9.81) * 1.6 + microburst;
 state.vz = -Math.cos(state.yaw) * speed;
-state.x += state.vx * dt; state.y += state.vy * dt; state.z += state.vz * dt;
+state.x += state.vx * dt;
+state.y += state.vy * dt;
+state.z += state.vz * dt;
 flightLog.push({ x: state.x, y: state.y, z: state.z, pitch: state.pitch, roll: state.roll, yaw: state.yaw });
-if (state.y <= 1.1 && (state.vy < -11.5 || Math.abs(state.roll) > 0.45)) triggerCrash("HARD IMPACT / WING STRIKE");
-hazards.forEach(h => {
-if (Math.abs(state.x - h.x) < (h.w/2 + 4) && Math.abs(state.y - h.y) < (h.h/2 + 2) && Math.abs(state.z - h.z) < (h.d/2 + 10))
-triggerCrash(COLLISION WITH ${h.label.toUpperCase()});
-});
+if (state.y <= 1.1 && (state.vy < -11.5 || Math.abs(state.roll) > 0.45)) {
+triggerCrash("HARD IMPACT / WING STRIKE");
+}
+for (let i = 0; i < hazards.length; i++) {
+const h = hazards[i];
+if (Math.abs(state.x - h.x) < (h.w / 2 + 4) && Math.abs(state.y - h.y) < (h.h / 2 + 2) && Math.abs(state.z - h.z) < (h.d / 2 + 10)) {
+triggerCrash("COLLISION WITH " + h.label.toUpperCase());
+}
+}
 const knots = Math.round(speed * 1.94384);
-if (onGround && Math.abs(state.x) < 24 && state.z < -2050 && state.z > -2200 && knots < 15) triggerLevelSuccess();
+if (onGround && Math.abs(state.x) < 24 && state.z < -2050 && state.z > -2200 && knots < 15) {
+triggerLevelSuccess();
+}
 document.getElementById('spdVal').innerText = knots;
 document.getElementById('altVal').innerText = Math.max(0, Math.round((state.y - 1) * 3.28));
 document.getElementById('pitchVal').innerText = Math.round(state.pitch * 57.3);
 document.getElementById('rollVal').innerText = Math.round(state.roll * 57.3);
 document.getElementById('thrVal').innerText = Math.round(state.throttle * 100);
-document.getElementById('thrBar').style.width = ${state.throttle * 100}%;
+document.getElementById('thrBar').style.width = Math.round(state.throttle * 100) + "%";
 document.getElementById('brkVal').innerText = state.brakes ? "ENGAGED" : "OFF";
 drawRadar();
 } else if (gameState === "CRASHED") {
-debris.forEach(d => { d.x += d.vxdt; d.y = Math.max(0.5, d.y + d.vydt); d.z += d.vzdt; d.vy -= 9.8dt; });
+for (let i = 0; i < debris.length; i++) {
+const d = debris[i];
+d.x += d.vx * dt;
+d.y = Math.max(0.5, d.y + d.vy * dt);
+d.z += d.vz * dt;
+d.vy -= 9.8 * dt;
+}
 } else if (gameState === "REPLAY" && flightLog.length > 0) {
 replayFrame = (replayFrame + 0.65) % flightLog.length;
 }
 const p = (gameState === "REPLAY" && flightLog.length > 0) ? flightLog[Math.floor(replayFrame)] : state;
 let cam = { x: p.x, y: p.y + 9, z: p.z + 32, pitch: p.pitch - 0.12, roll: 0, yaw: p.yaw };
-if (gameState === "PLAYING" && camMode === 1) cam = { x: p.x, y: p.y + 4, z: p.z - 12, pitch: p.pitch, roll: p.roll, yaw: p.yaw };
-if (gameState === "PLAYING" && camMode === 2) cam = { x: p.x - 16, y: p.y + 4, z: p.z + 4, pitch: p.pitch, roll: p.roll, yaw: p.yaw };
-if (gameState === "REPLAY" && replayCamMode === 1) cam = { x: 45, y: 22, z: p.z - 40, pitch: -0.2, roll: 0, yaw: 2.4 };
-if (gameState === "REPLAY" && replayCamMode === 2) cam = { x: p.x + 25, y: p.y + 6, z: p.z - 15, pitch: -0.1, roll: 0, yaw: 2.1 };
-ctx.fillStyle = lvl.sky; ctx.fillRect(0, 0, canvas.width, canvas.height);
+if (gameState === "PLAYING" && camMode === 1) {
+cam = { x: p.x, y: p.y + 4, z: p.z - 12, pitch: p.pitch, roll: p.roll, yaw: p.yaw };
+}
+if (gameState === "PLAYING" && camMode === 2) {
+cam = { x: p.x - 16, y: p.y + 4, z: p.z + 4, pitch: p.pitch, roll: p.roll, yaw: p.yaw };
+}
+if (gameState === "REPLAY" && replayCamMode === 1) {
+cam = { x: 45, y: 22, z: p.z - 40, pitch: -0.2, roll: 0, yaw: 2.4 };
+}
+if (gameState === "REPLAY" && replayCamMode === 2) {
+cam = { x: p.x + 25, y: p.y + 6, z: p.z - 15, pitch: -0.1, roll: 0, yaw: 2.1 };
+}
+ctx.fillStyle = lvl.sky;
+ctx.fillRect(0, 0, canvas.width, canvas.height);
 const horizonY = canvas.height / 2 + Math.sin(cam.pitch) * canvas.height * 0.85;
-ctx.fillStyle = lvl.ground; ctx.fillRect(0, Math.max(0, horizonY), canvas.width, canvas.height);
+ctx.fillStyle = lvl.ground;
+ctx.fillRect(0, Math.max(0, horizonY), canvas.width, canvas.height);
 drawQuad(project3D(-25, 0, -400, cam), project3D(25, 0, -400, cam), project3D(25, 0, -2200, cam), project3D(-25, 0, -2200, cam), "#222222");
-for (let z = -420; z > -2180; z -= 50)
-drawQuad(project3D(-1, 0.1, z, cam), project3D(1, 0.1, z, cam), project3D(1, 0.1, z-22, cam), project3D(-1, 0.1, z-22, cam), "#ffffff");
+for (let z = -420; z > -2180; z -= 50) {
+drawQuad(project3D(-1, 0.1, z, cam), project3D(1, 0.1, z, cam), project3D(1, 0.1, z - 22, cam), project3D(-1, 0.1, z - 22, cam), "#ffffff");
+}
 drawQuad(project3D(-24, 0.2, -2050, cam), project3D(24, 0.2, -2050, cam), project3D(24, 0.2, -2200, cam), project3D(-24, 0.2, -2200, cam), "rgba(0,255,68,0.5)");
-hazards.forEach(h => {
-if (h.isPlane) drawAircraft(h.x, h.y, h.z, 0, 0, 1.1, cam);
-else drawBox3D(h.x, h.y, h.z, h.w, h.h, h.d, h.color, cam);
-});
-if (gameState !== "CRASHED") drawAircraft(p.x, p.y, p.z, p.pitch, p.roll, p.yaw, cam);
-else debris.forEach(d => drawBox3D(d.x, d.y, d.z, d.size, d.size, d.size, d.color, cam));
+for (let i = 0; i < hazards.length; i++) {
+const h = hazards[i];
+if (h.isPlane) {
+drawAircraft(h.x, h.y, h.z, 0, 0, 1.1, cam);
+} else {
+drawBox3D(h.x, h.y, h.z, h.w, h.h, h.d, h.color, cam);
+}
+}
+if (gameState !== "CRASHED") {
+drawAircraft(p.x, p.y, p.z, p.pitch, p.roll, p.yaw, cam);
+} else {
+for (let i = 0; i < debris.length; i++) {
+const d = debris[i];
+drawBox3D(d.x, d.y, d.z, d.size, d.size, d.size, d.color, cam);
+}
+}
 if (lvl.fog > 0.001) {
-ctx.fillStyle = rgba(180, 190, 200, ${Math.min(0.65, lvl.fog * 130)});
+ctx.fillStyle = "rgba(180, 190, 200, " + Math.min(0.65, lvl.fog * 130) + ")";
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 }
